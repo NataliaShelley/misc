@@ -1,6 +1,8 @@
 const path = require("path");
 const express = require("express");
 const hbs = require("hbs");
+const geocode = require('./utils/geocode')
+const forecast = require('./utils/forecast')
 const app = express();
 const public = path.join(__dirname, "../public");
 const viewsPath = path.join(__dirname, "../templates/views");
@@ -16,19 +18,19 @@ hbs.registerPartials(partialsPath)
 
 app.get('/', (req, res)=> {
     res.render('index', {
-        title:"Title for HBS File",
+        title:"Weather App",
         name:"Natalia Shelley"
     })
 })
 app.get('/about', (req, res)=> {
-    res.render('index', {
-        title:"About Title for HBS File",
+    res.render('about', {
+        title:"About",
         name:"Natalia Shelley"
     })
 })
 app.get('/help', (req, res)=> {
-    res.render('index', {
-        title:"Help Title for HBS File",
+    res.render('help', {
+        title:"Help",
         name:"Natalia Shelley"
     })
 })
@@ -36,8 +38,20 @@ app.get('/help', (req, res)=> {
 app.get("/weather", (req, res)=> {
 console.log(req.query)
     if(req.query && req.query.address !== "") {
-        res.send({address:req.query.address,
-        weather:"It is raining"})
+
+        geocode(req.query.address, (error, { latitude, longitude, location } = {}) => {
+            if (error) {
+                return res.send({error})
+            }
+    
+            forecast(latitude, longitude, (error, forecastData) => {
+                if (error) {
+                    return res.send({error})
+                }
+    
+                res.send({forcast:forecastData,location, address:req.query.address})
+            })
+        })
     } else {
         res.send("<p>Please, provide the address</p>")
     }
